@@ -22,7 +22,14 @@ fun main(args: Array<String>) {
                 println("Tasks:")
                 tasks.forEach { task ->
                     val status = if (task.isCompleted) "[X]" else "[ ]"
-                    println("  $status ${task.id} - ${task.description}")
+                    if (task.isCompleted) {
+                        // For completed tasks, make the entire row green
+                        val formattedRow = "\u001b[32m$status ${task.id} - ${task.description}\u001b[0m"
+                        println("  $formattedRow")
+                    } else {
+                        val formattedStatus = status
+                        println("  $formattedStatus ${task.id} - ${task.description}")
+                    }
                 }
             }
         }
@@ -66,7 +73,14 @@ fun main(args: Array<String>) {
                 println("Search results for \"$${command.text}\":")
                 tasks.forEach { task ->
                     val status = if (task.isCompleted) "[X]" else "[ ]"
-                    println("  $status ${task.id} - ${task.description}")
+                    if (task.isCompleted) {
+                        // For completed tasks, make the entire row green
+                        val formattedRow = "\u001b[32m$status ${task.id} - ${task.description}\u001b[0m"
+                        println("  $formattedRow")
+                    } else {
+                        val formattedStatus = status
+                        println("  $formattedStatus ${task.id} - ${task.description}")
+                    }
                 }
             }
         }
