@@ -41,6 +41,13 @@ object CommandParser {
                 }
             }
             "help" -> Command.Help
+            "search" -> {
+                if (args.size < 2) {
+                    Command.Error("Usage: search <text>")
+                } else {
+                    Command.Search(args.drop(1).joinToString(" "))
+                }
+            }
             else -> Command.Error("Unknown command: $command. Use 'help' for usage.")
         }
     }
@@ -52,5 +59,6 @@ object CommandParser {
         data class Remove(val id: String) : Command()
         data class Error(val message: String) : Command()
         data class List(val done: Boolean, val open: Boolean) : Command()
+        data class Search(val text: String) : Command()
     }
 }

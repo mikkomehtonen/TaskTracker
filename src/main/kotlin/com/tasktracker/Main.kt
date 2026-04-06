@@ -52,10 +52,23 @@ fun main(args: Array<String>) {
             println("  list --done --open         - List all tasks (default)")
             println("  done <task_id>             - Mark task as completed")
             println("  remove <task_id>           - Remove a task")
+            println("  search <text>              - Search tasks by description")
             println("  help                       - Show this help")
         }
         is CommandParser.Command.Error -> {
             println("Error: ${command.message}")
+        }
+        is CommandParser.Command.Search -> {
+            val tasks = service.searchTasks(command.text)
+            if (tasks.isEmpty()) {
+                println("No tasks found matching \"$${command.text}\".")
+            } else {
+                println("Search results for \"$${command.text}\":")
+                tasks.forEach { task ->
+                    val status = if (task.isCompleted) "[X]" else "[ ]"
+                    println("  $status ${task.id} - ${task.description}")
+                }
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ usage() {
     echo "  list --open                - List open tasks only"
     echo "  done id                    - Mark task as complete"
     echo "  remove id                  - Remove a task"
+    echo "  search 'text'              - Search tasks by description"
     echo "  help                       - Show this help message"
     echo ""
     echo "Examples:"
@@ -29,6 +30,7 @@ usage() {
     echo "  $0 list --open"
     echo "  $0 done 1"
     echo "  $0 remove 1"
+    echo "  $0 search 'groceries'"
     echo "  $0 help"
 }
 
@@ -83,6 +85,16 @@ case "$1" in
         fi
         shift
         run_app "remove" "$*"
+        ;;
+    search)
+        if [ $# -lt 2 ]; then
+            echo "Error: Missing search text"
+            echo "Usage: $0 search 'text'"
+            exit 1
+        fi
+        # Shift to remove the command and pass the rest as arguments
+        shift
+        run_app "search" "$*"
         ;;
     help)
         usage

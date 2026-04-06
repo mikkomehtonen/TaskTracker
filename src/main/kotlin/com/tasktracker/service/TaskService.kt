@@ -59,4 +59,10 @@ class TaskService(private val repository: TaskRepository) {
     fun getTask(id: String): Task? {
         return tasks.find { it.id == id }
     }
+
+    fun searchTasks(text: String): List<Task> {
+        return tasks.filter { task ->
+            task.description.contains(text, ignoreCase = true)
+        }
+    }
 }

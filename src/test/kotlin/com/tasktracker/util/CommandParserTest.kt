@@ -139,4 +139,28 @@ class CommandParserTest {
         assertTrue(result is Command.Add)
         assertEquals("Buy cafés & résumés", (result as Command.Add).description)
     }
+
+    @Test
+    fun `parse search command with text`() {
+        val args = arrayOf("search", "groceries")
+        val result = CommandParser.parse(args)
+        assertTrue(result is Command.Search)
+        assertEquals("groceries", (result as Command.Search).text)
+    }
+
+    @Test
+    fun `parse search command with multiple words`() {
+        val args = arrayOf("search", "buy", "groceries", "and", "milk")
+        val result = CommandParser.parse(args)
+        assertTrue(result is Command.Search)
+        assertEquals("buy groceries and milk", (result as Command.Search).text)
+    }
+
+    @Test
+    fun `parse search command without text returns Error`() {
+        val args = arrayOf("search")
+        val result = CommandParser.parse(args)
+        assertTrue(result is Command.Error)
+        assertEquals("Usage: search <text>", (result as Command.Error).message)
+    }
 }

@@ -355,4 +355,93 @@ class TaskServiceTest {
         val allTasks = service.listTasks(done = false, open = false)
         assertEquals(4, allTasks.size)
     }
+
+    @Test
+    fun `searchTasks returns tasks matching description`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Buy groceries", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Walk the dog", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Buy milk", false, "2023-01-03T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val results = service.searchTasks("groceries")
+        
+        assertEquals(1, results.size)
+        assertEquals("Buy groceries", results[0].description)
+    }
+
+    @Test
+    fun `searchTasks is case insensitive`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Buy groceries", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Walk the dog", true, "2023-01-02T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val results = service.searchTasks("GROCERIES")
+        
+        assertEquals(1, results.size)
+        assertEquals("Buy groceries", results[0].description)
+    }
+
+    @Test
+    fun `searchTasks returns multiple results`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Buy groceries", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Walk the dog", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Buy milk", false, "2023-01-03T00:00:00Z"),
+            Task("4", "Buy bread", false, "2023-01-04T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val results = service.searchTasks("buy")
+        
+        assertEquals(3, results.size)
+        assertTrue(results.any { it.description == "Buy groceries" })
+        assertTrue(results.any { it.description == "Buy milk" })
+        assertTrue(results.any { it.description == "Buy bread" })
+    }
+
+    @Test
+    fun `searchTasks returns empty list when no matches`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Buy groceries", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Walk the dog", true, "2023-01-02T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val results = service.searchTasks("shopping")
+        
+        assertEquals(0, results.size)
+    }
+
+    @Test
+    fun `searchTasks works with empty search text`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Buy groceries", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Walk the dog", true, "2023-01-02T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val results = service.searchTasks("")
+        
+        // Empty string should match all tasks
+        assertEquals(2, results.size)
+    }
 }
