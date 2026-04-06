@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
             } else {
                 println("Tasks:")
                 tasks.forEach { task ->
-                    val status = if (task.isCompleted) "✓" else "○"
+                    val status = if (task.isCompleted) "[X]" else "[ ]"
                     println("  $status ${task.id} - ${task.description}")
                 }
             }
