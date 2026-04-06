@@ -6,32 +6,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 
 class TaskRepositoryTest {
 
     private lateinit var repository: TaskRepository
-    private lateinit var tempFile: File
 
     @BeforeEach
     fun setUp() {
-        // Create a temporary file for testing
-        tempFile = File.createTempFile("tasks", ".json")
-        tempFile.deleteOnExit()
-        
-        // Create repository with temp file path - but since current implementation uses fixed fileName,
-        // we'll test with a temporary file in the working directory
+        // Create repository with fresh instance (uses fixed file name)
         repository = TaskRepository()
     }
 
     @AfterEach
     fun tearDown() {
-        // Clean up temp file if it exists
-        if (tempFile.exists()) {
-            tempFile.delete()
-        }
-        // Clean up the test file if it exists
+        // Clean up test file if it exists
         val testFile = File("tasks.json")
         if (testFile.exists()) {
             testFile.delete()
@@ -51,16 +39,12 @@ class TaskRepositoryTest {
 
     @Test
     fun `test save and load single task`() {
+        // Test saving single task
         val task = Task("1", "Test task", false, "2023-01-01")
-        val taskList = mutableListOf(task)
+        repository.save(listOf(task))
         
-        // Save task
-        repository.save(taskList)
-        
-        // Load task
+        // Test loading single task
         val loadedTasks = repository.load()
-        
-        // Verify
         assertEquals(1, loadedTasks.size)
         assertEquals(task.id, loadedTasks[0].id)
         assertEquals(task.description, loadedTasks[0].description)
@@ -70,30 +54,25 @@ class TaskRepositoryTest {
 
     @Test
     fun `test save and load multiple tasks`() {
-        val tasks = mutableListOf(
-            Task("1", "First task", false, "2023-01-01"),
-            Task("2", "Second task", true, "2023-01-02"),
-            Task("3", "Third task", false, "2023-01-03")
+        // Test saving multiple tasks
+        val tasks = listOf(
+            Task("1", "Task 1", false, "2023-01-01"),
+            Task("2", "Task 2", true, "2023-01-02"),
+            Task("3", "Task 3", false, "2023-01-03")
         )
-        
-        // Save multiple tasks
         repository.save(tasks)
         
-        // Load tasks
+        // Test loading multiple tasks
         val loadedTasks = repository.load()
-        
-        // Verify
         assertEquals(3, loadedTasks.size)
         assertEquals(tasks[0].id, loadedTasks[0].id)
         assertEquals(tasks[0].description, loadedTasks[0].description)
         assertEquals(tasks[0].isCompleted, loadedTasks[0].isCompleted)
         assertEquals(tasks[0].createdAt, loadedTasks[0].createdAt)
-        
         assertEquals(tasks[1].id, loadedTasks[1].id)
         assertEquals(tasks[1].description, loadedTasks[1].description)
         assertEquals(tasks[1].isCompleted, loadedTasks[1].isCompleted)
         assertEquals(tasks[1].createdAt, loadedTasks[1].createdAt)
-        
         assertEquals(tasks[2].id, loadedTasks[2].id)
         assertEquals(tasks[2].description, loadedTasks[2].description)
         assertEquals(tasks[2].isCompleted, loadedTasks[2].isCompleted)
@@ -103,97 +82,89 @@ class TaskRepositoryTest {
     @Test
     fun `test load from empty file`() {
         // Create an empty file
-        File("tasks.json").writeText("")
+        val testFile = File("tasks.json")
+        testFile.writeText("")
         
         // Load from empty file
         val loadedTasks = repository.load()
-        
-        // Should return empty list
         assertTrue(loadedTasks.isEmpty())
     }
 
     @Test
     fun `test load from invalid JSON`() {
-        // Write invalid JSON to file
-        File("tasks.json").writeText("{invalid json}")
+        // Create file with invalid JSON
+        val testFile = File("tasks.json")
+        testFile.writeText("{invalid json}")
         
-        // Load should not throw exception and return empty list
+        // Load from invalid JSON - should return empty list
         val loadedTasks = repository.load()
         assertTrue(loadedTasks.isEmpty())
     }
 
     @Test
     fun `test load from corrupted JSON`() {
-        // Write partially valid JSON to file
-        File("tasks.json").writeText("[{\"id\":\"1\", \"description\":\"Task\"}")
+        // Create file with corrupted JSON
+        val testFile = File("tasks.json")
+        testFile.writeText("[{invalid json}]")
         
-        // Load should not throw exception and return empty list
+        // Load from corrupted JSON - should return empty list
         val loadedTasks = repository.load()
         assertTrue(loadedTasks.isEmpty())
     }
 
     @Test
     fun `test load from non-existent file`() {
-        // Delete the tasks.json file to simulate non-existent file
+        // Delete the file to make sure it's non-existent
         val testFile = File("tasks.json")
         if (testFile.exists()) {
             testFile.delete()
         }
         
-        // Load should not throw exception and return empty list
+        // Load from non-existent file - should return empty list
         val loadedTasks = repository.load()
         assertTrue(loadedTasks.isEmpty())
     }
 
     @Test
-    fun `test save to existing file`() {
-        // Create initial content
-        val initialTask = Task("1", "Initial task", false, "2023-01-01")
-        val initialTasks = mutableListOf(initialTask)
+    fun `test save and overwrite functionality`() {
+        // Save first set of tasks
+        val tasks1 = listOf(Task("1", "Task 1", false, "2023-01-01"))
+        repository.save(tasks1)
+        val loadedTasks1 = repository.load()
+        assertEquals(1, loadedTasks1.size)
         
-        // Save initial tasks
-        repository.save(initialTasks)
-        
-        // Load and verify
-        val loadedTasks = repository.load()
-        assertEquals(1, loadedTasks.size)
-        assertEquals("1", loadedTasks[0].id)
-        
-        // Add new task and save
-        val newTask = Task("2", "New task", true, "2023-01-02")
-        val updatedTasks = mutableListOf(newTask)
-        repository.save(updatedTasks)
-        
-        // Load and verify updated content
-        val updatedLoadedTasks = repository.load()
-        assertEquals(1, updatedLoadedTasks.size)
-        assertEquals("2", updatedLoadedTasks[0].id)
-        assertEquals("New task", updatedLoadedTasks[0].description)
-        assertEquals(true, updatedLoadedTasks[0].isCompleted)
+        // Save second set of tasks
+        val tasks2 = listOf(Task("2", "Task 2", true, "2023-01-02"))
+        repository.save(tasks2)
+        val loadedTasks2 = repository.load()
+        assertEquals(1, loadedTasks2.size)
+        assertEquals("2", loadedTasks2[0].id)
     }
 
     @Test
-    fun `test load and save with special characters`() {
-        val specialTask = Task("1", "Task with \"quotes\" and \n newlines", false, "2023-01-01")
-        val tasks = mutableListOf(specialTask)
+    fun `test save and load task with special characters`() {
+        // Test with special characters in description
+        val task = Task("1", "Task with \"quotes\" and \n newlines", false, "2023-01-01")
+        repository.save(listOf(task))
         
-        repository.save(tasks)
         val loadedTasks = repository.load()
-        
         assertEquals(1, loadedTasks.size)
-        assertEquals(specialTask.description, loadedTasks[0].description)
+        assertEquals(task.description, loadedTasks[0].description)
     }
 
     @Test
-    fun `test load large number of tasks`() {
-        val tasks = mutableListOf<Task>()
-        for (i in 1..100) {
-            tasks.add(Task("$i", "Task $i", i % 2 == 0, "2023-01-01"))
+    fun `test save and load large number of tasks`() {
+        // Create and save many tasks
+        val tasks = (1..100).map { 
+            Task(it.toString(), "Task $it", it % 2 == 0, "2023-01-01") 
         }
-        
         repository.save(tasks)
-        val loadedTasks = repository.load()
         
+        val loadedTasks = repository.load()
         assertEquals(100, loadedTasks.size)
+        
+        // Verify first and last task
+        assertEquals("1", loadedTasks[0].id)
+        assertEquals("100", loadedTasks[99].id)
     }
 }

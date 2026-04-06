@@ -14,7 +14,18 @@ object CommandParser {
                     Command.Add(args.drop(1).joinToString(" "))
                 }
             }
-            "list" -> Command.List
+            "list" -> {
+                val flags = args.slice(1 until args.size).toSet()
+                val done = flags.contains("--done")
+                val open = flags.contains("--open")
+                
+                // If no flags are specified, show all tasks
+                if (done || open) {
+                    Command.List(done = done, open = open)
+                } else {
+                    Command.List(done = false, open = false)
+                }
+            }
             "done" -> {
                 if (args.size < 2) {
                     Command.Error("Usage: done <task_id>")
@@ -35,11 +46,11 @@ object CommandParser {
     }
 
     sealed class Command {
-        object List : Command()
         object Help : Command()
         data class Add(val description: String) : Command()
         data class Done(val id: String) : Command()
         data class Remove(val id: String) : Command()
         data class Error(val message: String) : Command()
+        data class List(val done: Boolean, val open: Boolean) : Command()
     }
 }

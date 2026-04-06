@@ -15,7 +15,7 @@ fun main(args: Array<String>) {
             println("Added task: ${task.id} - ${task.description}")
         }
         is CommandParser.Command.List -> {
-            val tasks = service.listTasks()
+            val tasks = service.listTasks(done = command.done, open = command.open)
             if (tasks.isEmpty()) {
                 println("No tasks found.")
             } else {
@@ -47,6 +47,9 @@ fun main(args: Array<String>) {
             println("Usage:")
             println("  add \"<task description>\"   - Add a new task")
             println("  list                       - List all tasks")
+            println("  list --done                - List completed tasks only")
+            println("  list --open                - List open tasks only")
+            println("  list --done --open         - List all tasks (default)")
             println("  done <task_id>             - Mark task as completed")
             println("  remove <task_id>           - Remove a task")
             println("  help                       - Show this help")

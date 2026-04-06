@@ -19,8 +19,20 @@ class TaskService(private val repository: TaskRepository) {
         return task
     }
 
-    fun listTasks(): List<Task> {
-        return tasks
+    fun listTasks(done: Boolean = false, open: Boolean = false): List<Task> {
+        // If no flags are set, return all tasks
+        if (!done && !open) {
+            return tasks
+        }
+        
+        // Return only the filtered tasks
+        return tasks.filter { task ->
+            when {
+                done -> task.isCompleted
+                open -> !task.isCompleted
+                else -> true
+            }
+        }
     }
 
     fun completeTask(id: String): Boolean {
