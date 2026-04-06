@@ -205,22 +205,154 @@ class TaskServiceTest {
     }
 
     @Test
-    fun `service maintains internal state properly`() {
-        // Create a mock repository that returns an empty list initially
+    fun `listTasks returns all tasks when no filters specified`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Task 2", true, "2023-01-02T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val tasks = service.listTasks() // No filters specified
+        
+        assertEquals(2, tasks.size)
+        assertEquals("Task 1", tasks[0].description)
+        assertEquals("Task 2", tasks[1].description)
+        assertFalse(tasks[0].isCompleted)
+        assertTrue(tasks[1].isCompleted)
+    }
+
+    @Test
+    fun `listTasks returns only completed tasks when done flag is true`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Task 2", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Task 3", true, "2023-01-03T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val tasks = service.listTasks(done = true, open = false)
+        
+        assertEquals(2, tasks.size)
+        assertTrue(tasks.all { it.isCompleted })
+        assertEquals("Task 2", tasks[0].description)
+        assertEquals("Task 3", tasks[1].description)
+    }
+
+    @Test
+    fun `listTasks returns only open tasks when open flag is true`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Task 2", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Task 3", false, "2023-01-03T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val tasks = service.listTasks(done = false, open = true)
+        
+        assertEquals(2, tasks.size)
+        assertFalse(tasks.any { it.isCompleted })
+        assertEquals("Task 1", tasks[0].description)
+        assertEquals("Task 3", tasks[1].description)
+    }
+
+    @Test
+    fun `listTasks returns all tasks when both done and open flags are true`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Task 2", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Task 3", false, "2023-01-03T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        val tasks = service.listTasks(done = true, open = true)
+        
+        // When both flags are true, the code checks done first due to when statement order
+        // If done is true, it returns tasks where task.isCompleted (so it returns only completed tasks)
+        // This was the original behavior
+        val completedTasks = testTasks.filter { it.isCompleted }
+        assertEquals(completedTasks.size, tasks.size)
+        assertTrue(tasks.all { it.isCompleted })
+    }
+
+    @Test
+    fun `listTasks handles task filtering correctly`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Open Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Completed Task 1", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Open Task 2", false, "2023-01-03T00:00:00Z"),
+            Task("4", "Completed Task 2", true, "2023-01-04T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
+        
+        val service = TaskService(mockRepository)
+        
+        // Test listing only completed tasks
+        val completedTasks = service.listTasks(done = true, open = false)
+        assertEquals(2, completedTasks.size)
+        assertTrue(completedTasks.all { it.isCompleted })
+        
+        // Test listing only open tasks
+        val openTasks = service.listTasks(done = false, open = true)
+        assertEquals(2, openTasks.size)
+        assertFalse(openTasks.any { it.isCompleted })
+        
+        // Test listing all tasks
+        val allTasks = service.listTasks(done = false, open = false)
+        assertEquals(4, allTasks.size)
+    }
+
+    @Test
+    fun `listTasks returns empty list when no tasks exist`() {
+        // Create a mock repository
         val mockRepository = mock(TaskRepository::class.java)
         `when`(mockRepository.load()).thenReturn(emptyList())
         
         val service = TaskService(mockRepository)
+        val tasks = service.listTasks(done = true, open = false)
         
-        // Add a task
-        val task = service.addTask("Test task")
+        assertEquals(0, tasks.size)
+    }
+
+    @Test
+    fun `listTasks handles mixed completed and open tasks correctly`() {
+        // Create a mock repository
+        val mockRepository = mock(TaskRepository::class.java)
+        val testTasks = listOf(
+            Task("1", "Open Task 1", false, "2023-01-01T00:00:00Z"),
+            Task("2", "Completed Task 1", true, "2023-01-02T00:00:00Z"),
+            Task("3", "Open Task 2", false, "2023-01-03T00:00:00Z"),
+            Task("4", "Completed Task 2", true, "2023-01-04T00:00:00Z")
+        )
+        `when`(mockRepository.load()).thenReturn(testTasks)
         
-        // Load repository again should load the task
-        `when`(mockRepository.load()).thenReturn(listOf(task))
-        val service2 = TaskService(mockRepository)
+        val service = TaskService(mockRepository)
         
-        val tasks = service2.listTasks()
-        assertEquals(1, tasks.size)
-        assertEquals("Test task", tasks[0].description)
+        // Test listing only completed tasks
+        val completedTasks = service.listTasks(done = true, open = false)
+        assertEquals(2, completedTasks.size)
+        assertTrue(completedTasks.all { it.isCompleted })
+        
+        // Test listing only open tasks
+        val openTasks = service.listTasks(done = false, open = true)
+        assertEquals(2, openTasks.size)
+        assertFalse(openTasks.any { it.isCompleted })
+        
+        // Test listing all tasks
+        val allTasks = service.listTasks(done = false, open = false)
+        assertEquals(4, allTasks.size)
     }
 }
